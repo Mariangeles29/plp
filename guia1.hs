@@ -128,6 +128,7 @@ componerTodas = foldr (\f rec -> \n -> f (rec n)) id
 
 -- 9.
 
+-- I)
 permutaciones::[a]->[[a]]
 permutaciones = foldr (\x rec -> concatMap (\l -> (map (\i-> (take i l) ++ [x] ++ ( drop i l)) [0 .. length l])) rec ) [[]]
 
@@ -159,3 +160,78 @@ permutaciones = foldr (\x rec -> concatMap (\l -> (map (\i-> (take i l) ++ [x] +
 -- a cada lista y une los resultados para que quede una lista de listas.
 -- foldr me ayuda a recorrer la lista original de der a izq, repitiendo esto
 -- para cada elto.
+
+
+-- II)
+
+--partes [5, 1, 2] → [[], [5], [1], [2], [5, 1], [5, 2], [1, 2], [5, 1, 2]]
+
+partes::[a]->[[a]]
+partes = foldr (\x rec -> rec ++ (map (x:) rec)) [[]]
+
+-- III)
+
+prefijos:: [a]->[[a]]
+prefijos = foldr (\x rec -> [[]] ++ (map (x:) rec)) [[]] -- (?)
+
+sufijos::[a]->[[a]]
+sufijos = foldr (\x rec -> (map (x:) (take 1 rec)) ++ rec ) [[]]
+
+-- IV)
+
+sublistas::[a]->[[a]]
+sublistas xs = concatMap prefijos (sufijos xs)
+
+-- 10.
+
+-- a)
+
+recr :: (a -> [a] -> b -> b) -> b -> [a] -> b
+recr _ z [] = z
+recr f z (x : xs) = f x xs (recr f z xs)
+
+sacarUna::Eq a => a -> [a] -> [a]
+sacarUna e = recr (\x xs rec -> if x==e then xs else x:rec) []
+
+-- c)
+
+insertarOrdenado::(Ord a)=>a->[a]->[a]
+insertarOrdenado e = recr (\x xs rec -> if e<=x then (e:(x:xs)) else x:rec) []
+
+-- 12.
+
+-- I)
+
+mapPares:: (a->b->c)->[(a,b)]->[c]
+mapPares f = foldr (\x rec -> (uncurry f x):rec) []
+
+-- II)
+
+armarPares::(Eq b) => [a]->[b]-> [(a,b)]
+armarPares = foldr (\x rec -> \ys -> if (ys==[]) then [] else (x,head ys):rec(tail ys)) (const [])
+
+-- III)
+
+mapDoble::(a->b->c)->[a]->[b]->[c]
+mapDoble f = foldr (\x rec -> \ys -> (f x (head ys)):(rec (tail ys))) (const []) 
+
+
+-- ------------ OTRAS ESTRUCTURAS DE DATOS --------------
+
+-- 14.
+
+-- foldr :: (a -> b -> b) -> b -> [a] -> b
+-- foldr z [] = z
+-- foldr f z (x:xs) = f x (foldr f z xs)
+
+data Nat = Zero | Succ Nat
+   -- CB: 0 -> (succ -> b)
+foldNat::(b->b)->b->Integer->b
+foldNat cSucc cZero 0 = cZero
+foldNat cSucc cZero n =  cSucc (foldNat cSucc cZero (n-1))
+
+potencia::Integer-> Integer -> Integer
+potencia n = foldNat ((*) n) (1)
+
+
+
