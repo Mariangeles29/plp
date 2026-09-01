@@ -85,6 +85,93 @@ pertenece e = foldr (\x rec-> x==e || rec) False
 
 -- c.
 masmas::[Int]->[Int]->[Int]
+masmas = foldr (\x rec-> (\ys -
+-- (2)
+
+currymp::((a,b)->c)->a->b->c
+currymp f x y = f (x,y)
+
+uncurrymp::(a->b->c)->(a,b)->c
+uncurrymp f (x,y) = f x y
+
+-- (4)
+
+-- ------------------ GENERACION INFINITA ------------------
+
+-- gracias a la evaluacion lazy de haskell se facilita trabajar con generacion
+-- infinita, ya que los valores se calculan solo cuando los necesito
+
+-- sintaxis de listas: [expresion | generador, condicion]
+
+-- si intento simplemente hacer [(x,y)| x <- [0..], y <- [0..]]
+-- la x se queda atrapada en el 0 mientras que y crece al infinito,
+-- asi que nunca se generaria el par (1,0)
+
+-- idea ~> genero una lista de 0 a y para la coordenada x, luego 
+-- y crece al infinito ,
+
+paresDeNat::[(Int,Int)]
+paresDeNat = [(x,y-x) | y <- [0 .. ], x <-[0 .. y]]
+
+-- (5)
+
+pitagoricas :: [(Integer, Integer, Integer)]
+pitagoricas = [(a, b, c) |  c <- [1..], b <-[1.. c], a <- [1.. b],  a^2 + b^2 == c^2]
+
+
+-- (8)
+
+-- I)
+
+-- filter :: (a -> Bool) -> [a] -> [a]
+-- filter [] = []
+-- filter p (x:xs) =
+--      if p x
+--      then x : filter p xs
+--      else filter p xs
+
+-- map :: (a -> b) -> [a] -> [b]
+-- map [] = []
+-- map f (x:xs) = f x : map f xs
+
+-- a. 
+
+menoresACinco::[String]->[String]
+menoresACinco = filter (\x -> length x <=5)
+
+-- b.
+
+notasAprobadas::[Int]->[Bool]
+notasAprobadas = map (\x -> x>6 )
+
+-- c.
+
+paresAlCuadrado::[Int]->[Int]
+paresAlCuadrado = map (\y -> y^2 ). (filter (\x -> mod x 2 == 0))
+
+-- 7.
+listasQueSuman::Int->[[Int]]
+listasQueSuman 1 =[[1]] 
+listasQueSuman n = [ k : resto | k <- [1 .. n], resto <-listasQueSuman (n-k)]
+
+-- 8.
+
+-- II).
+
+-- foldr :: (a -> b -> b) -> b -> [a] -> b
+-- foldr z [] = z
+-- foldr f z (x:xs) = f x (foldr f z xs)
+
+-- a.
+sumF::[Int]->Int
+sumF = foldr (+) 0
+
+-- b.
+pertenece::Int->[Int]->Bool
+pertenece e = foldr (\x rec-> x==e || rec) False
+
+-- c.
+masmas::[Int]->[Int]->[Int]
 masmas = foldr (\x rec-> (\ys -> x : rec ys)) (\ys -> ys)
 
 -- masmas xs [] = xs
@@ -280,13 +367,12 @@ cantNodos = foldAB (0) (\cNodosI _ cNodosD -> 1 + cNodosI + cNodosD)
 -- mejorSegun::(a->a->Bool)-> [a] -> a
 -- mejorSegun f = foldr1 (\x rec -> if f x rec then x else rec) 
 
-mejorSegunAB::(a->a->Bool)-> AB a -> a -- ?) no entiendo del todo como se ataja el caso nil
-mejorSegunAB f (Bin i r d)= mejor f r (Bin i r d)
+--- ?) no entiendo del todo como se ataja el caso nil
 
-mejor::(a->a->Bool)-> a -> AB a -> a
-mejor f r = foldAB r (\mI v mD -> case (f mI mD) of
-    True -> if (f v mI) then v else mI
-    False -> if (f v mD) then v else mD) -- en que momento comparo r con el mejor del arbol?
+mejorSegunAB::(a->a->Bool)-> AB a -> a
+mejorSegunAB f (Bin i r d) = foldAB r (\ri r rd -> case (f ri rd) of
+    True -> if (f r ri) then r else ri
+    False -> if (f r rd) then r else rd) (Bin i r d)
 
 -- IV) 
 -- Recordar que, en un árbol binario de búsqueda, el valor de un nodo es mayor o igual que los valores que
@@ -298,9 +384,28 @@ mejor f r = foldAB r (\mI v mD -> case (f mI mD) of
 -- recrAB cNil cAB (Bin i r d) = cAB i r d (rec i) (rec d)
 --     where rec = recrAB cNil cAB 
 
+esABB::(Ord a)=> AB a -> Bool -- (?) ¿como se que i y d estan ordenados? ¿como maneja a Nil mejorSegunAB?
+esABB = recrAB (True) (\i r d ri rd -> 
+    ri && rd && ((esNil i) || ((mejorSegunAB (>) i) <= r)) && ((esNil d ) || ((mejorSegunAB (<) d)> r )))
+-- condiciones-> 1. ri es ABB ( o sea ri = True)
+-- 2. rd es ABB 
+-- 3. i es nil o el mayor elemento del subarbol i es menor o igual a la raiz
+-- 4. d es nil o el menor elemento del subarbol d es mayor que la raiz
 
-esABB::(Ord a)=> AB a -> Bool -- (?)
-esABB = recrAB (True) (\i r d ri rd -> ri && rd && ((mejorSegunAB (>) i) <= r) && ((mejorSegunAB (<) d)> r )) 
+-- 18.
+
+-- I)
+
+ramas::(AB a ) -> [a] -- (?)
+ramas = foldAB ([]) (\lista_Izq r lista_Der -> lista_Izq ++ [r] ++lista_Der) 
+
+cantHojas::(AB a) -> Int -- ?)
+cantHojas = recrAB (0) (\ i r d ri rd -> case (esNil i) of
+    True -> if (esNil d) then 1 else rd
+    False -> if (esNil d) then ri else ri+rd)
+
+espejo::(AB a)-> (AB a)
+espejo = foldAB (Nil) (\ri r rd -> Bin rd r ri)
 
 
 -- 1. El árbol más básico (vacío)
