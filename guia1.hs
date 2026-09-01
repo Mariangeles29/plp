@@ -233,5 +233,113 @@ foldNat cSucc cZero n =  cSucc (foldNat cSucc cZero (n-1))
 potencia::Integer-> Integer -> Integer
 potencia n = foldNat ((*) n) (1)
 
+-- 17.
+
+data AB a = Nil | Bin (AB a) a (AB a)
 
 
+-- I) 
+
+-- ¿por que Nil en foldAB es de tipo b y no (AB a -> b), o (a->b) o (b -> b)?
+--     ~> la funcion de reemplazo pide exactamente la misma # de datos que 
+--     guarda el constructor original. si miro el arbol, para construir un nodo 
+--     uso Bin AB a a AB a. Este constructor necesita 3 datos para existir. Por 
+--     eso, su funcion de reempplazo en el fold pide 3 args (2 recursivos y uno simple).
+--     Para construir un vacio uso Nil, este necesita 0 datos para existir.
+--     Nil no guarda datos. 
+
+foldAB::b -> (b->a->b->b) -> AB a -> b
+foldAB cNil _ Nil = cNil
+foldAB cNil cAB (Bin i r d) = cAB (rec i) r (rec d)
+    where rec = foldAB cNil cAB  
+
+-- recr :: (a -> [a] -> b -> b) -> b -> [a] -> b
+-- recr _ z [] = z
+-- recr f z (x : xs) = f x xs (recr f z xs)
+recrAB::b->(AB a -> a -> AB a -> b -> b -> b) -> (AB a)-> b
+recrAB cNil _ Nil = cNil
+recrAB cNil cAB (Bin i r d) = cAB i r d (rec i) (rec d)
+    where rec = recrAB cNil cAB 
+
+-- II)
+
+esNil::(AB a) -> Bool
+esNil Nil = True
+esNil (Bin _ _ _) = False
+
+altura::(AB a) -> Int
+altura = foldAB (0) (\altura_i _ altura_d -> 1 + (max altura_i altura_d))
+
+cantNodos::(AB a)->Int 
+cantNodos = foldAB (0) (\cNodosI _ cNodosD -> 1 + cNodosI + cNodosD)
+
+
+-- III)
+
+
+-- mejorSegun::(a->a->Bool)-> [a] -> a
+-- mejorSegun f = foldr1 (\x rec -> if f x rec then x else rec) 
+
+mejorSegunAB::(a->a->Bool)-> AB a -> a -- ?) no entiendo del todo como se ataja el caso nil
+mejorSegunAB f (Bin i r d)= mejor f r (Bin i r d)
+
+mejor::(a->a->Bool)-> a -> AB a -> a
+mejor f r = foldAB r (\mI v mD -> case (f mI mD) of
+    True -> if (f v mI) then v else mI
+    False -> if (f v mD) then v else mD) -- en que momento comparo r con el mejor del arbol?
+
+-- IV) 
+-- Recordar que, en un árbol binario de búsqueda, el valor de un nodo es mayor o igual que los valores que
+-- aparecen en el subárbol izquierdo y es estrictamente menor que los valores que aparecen en el subárbol
+-- derecho.
+
+-- recrAB::b->(AB a -> a -> AB a -> b -> b -> b) -> (AB a)-> b
+-- recrAB cNil _ Nil = cNil
+-- recrAB cNil cAB (Bin i r d) = cAB i r d (rec i) (rec d)
+--     where rec = recrAB cNil cAB 
+
+
+esABB::(Ord a)=> AB a -> Bool -- (?)
+esABB = recrAB (True) (\i r d ri rd -> ri && rd && ((mejorSegunAB (>) i) <= r) && ((mejorSegunAB (<) d)> r )) 
+
+
+-- 1. El árbol más básico (vacío)
+arbolVacio :: AB Int
+arbolVacio = Nil
+
+-- 2. Una sola hoja
+arbolHoja :: AB Int
+arbolHoja = Bin Nil 10 Nil
+
+-- 3. Un árbol de números balanceado
+--       5
+--      / \
+--     2   8
+arbolB :: AB Int
+arbolB = Bin (Bin Nil 2 Nil) 5 (Bin Nil 8 Nil)
+
+arbolDB :: AB Int
+arbolDB = Bin (Bin (Bin Nil 3 Nil) 5 Nil) 10 (Bin Nil 15 Nil)
+-- True
+abb1 :: AB Int
+abb1 = Bin (Bin (Bin Nil 2 Nil) 3 (Bin Nil 4 Nil)) 5 (Bin Nil 8 (Bin Nil 9 Nil))
+
+abb2 :: AB Int
+abb2 = Bin (Bin Nil 5 Nil) 10 Nil
+
+abb8 :: AB Int
+abb8 = Bin (Bin Nil 5 Nil) 10 Nil
+
+abb3 :: AB Int
+abb3 = Nil
+
+--false
+
+noAbb1 :: AB Int
+noAbb1 = Bin (Bin Nil 6 Nil) 5 Nil
+
+noAbb2 :: AB Int
+noAbb2 = Bin (Bin Nil 3 (Bin Nil 6 Nil)) 5 (Bin Nil 8 Nil)
+
+noAbb3 :: AB Int
+noAbb3 = Bin Nil 10 (Bin Nil 8 Nil)
