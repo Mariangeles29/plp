@@ -395,9 +395,14 @@ esABB = recrAB (True) (\i r d ri rd ->
 -- 18.
 
 -- I)
+ramas::(AB a ) -> [[a]] -- (?)
+ramas = foldAB ([[]]) (\ri r rd -> case ri++rd of 
+    [[]] -> [[r]]
+    xs -> map (r:) xs )
 
-ramas::(AB a ) -> [a] -- (?)
-ramas = foldAB ([]) (\lista_Izq r lista_Der -> lista_Izq ++ [r] ++lista_Der) 
+-- ramasG :: (AB a ) -> [[a]]
+-- ramasG = foldAB [[]] (\ri r rd -> agregarR r ri ++ agregarR r rd)
+--     where agregarR ra l = map (:ra) l 
 
 cantHojas::(AB a) -> Int -- ?)
 cantHojas = recrAB (0) (\ i r d ri rd -> case (esNil i) of
@@ -406,6 +411,13 @@ cantHojas = recrAB (0) (\ i r d ri rd -> case (esNil i) of
 
 espejo::(AB a)-> (AB a)
 espejo = foldAB (Nil) (\ri r rd -> Bin rd r ri)
+
+-- II).
+
+mismaEstructura :: AB a -> (AB b -> Bool)
+mismaEstructura = foldAB (\ar -> esNil(ar)) (\ri r rd -> \a -> case a of 
+    Nil -> False
+    Bin izq raiz der -> (ri izq) && (rd der)) 
 
 
 -- 1. El árbol más básico (vacío)
