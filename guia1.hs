@@ -1,4 +1,5 @@
 
+
 -- (2)
 
 currymp::((a,b)->c)->a->b->c
@@ -67,94 +68,10 @@ listasQueSuman::Int->[[Int]]
 listasQueSuman 1 =[[1]] 
 listasQueSuman n = [ k : resto | k <- [1 .. n], resto <-listasQueSuman (n-k)]
 
--- 8.
 
--- II).
 
--- foldr :: (a -> b -> b) -> b -> [a] -> b
--- foldr z [] = z
--- foldr f z (x:xs) = f x (foldr f z xs)
-
--- a.
-sumF::[Int]->Int
-sumF = foldr (+) 0
-
--- b.
-pertenece::Int->[Int]->Bool
-pertenece e = foldr (\x rec-> x==e || rec) False
 
 -- c.
-masmas::[Int]->[Int]->[Int]
-masmas = foldr (\x rec-> (\ys -
--- (2)
-
-currymp::((a,b)->c)->a->b->c
-currymp f x y = f (x,y)
-
-uncurrymp::(a->b->c)->(a,b)->c
-uncurrymp f (x,y) = f x y
-
--- (4)
-
--- ------------------ GENERACION INFINITA ------------------
-
--- gracias a la evaluacion lazy de haskell se facilita trabajar con generacion
--- infinita, ya que los valores se calculan solo cuando los necesito
-
--- sintaxis de listas: [expresion | generador, condicion]
-
--- si intento simplemente hacer [(x,y)| x <- [0..], y <- [0..]]
--- la x se queda atrapada en el 0 mientras que y crece al infinito,
--- asi que nunca se generaria el par (1,0)
-
--- idea ~> genero una lista de 0 a y para la coordenada x, luego 
--- y crece al infinito ,
-
-paresDeNat::[(Int,Int)]
-paresDeNat = [(x,y-x) | y <- [0 .. ], x <-[0 .. y]]
-
--- (5)
-
-pitagoricas :: [(Integer, Integer, Integer)]
-pitagoricas = [(a, b, c) |  c <- [1..], b <-[1.. c], a <- [1.. b],  a^2 + b^2 == c^2]
-
-
--- (8)
-
--- I)
-
--- filter :: (a -> Bool) -> [a] -> [a]
--- filter [] = []
--- filter p (x:xs) =
---      if p x
---      then x : filter p xs
---      else filter p xs
-
--- map :: (a -> b) -> [a] -> [b]
--- map [] = []
--- map f (x:xs) = f x : map f xs
-
--- a. 
-
-menoresACinco::[String]->[String]
-menoresACinco = filter (\x -> length x <=5)
-
--- b.
-
-notasAprobadas::[Int]->[Bool]
-notasAprobadas = map (\x -> x>6 )
-
--- c.
-
-paresAlCuadrado::[Int]->[Int]
-paresAlCuadrado = map (\y -> y^2 ). (filter (\x -> mod x 2 == 0))
-
--- 7.
-listasQueSuman::Int->[[Int]]
-listasQueSuman 1 =[[1]] 
-listasQueSuman n = [ k : resto | k <- [1 .. n], resto <-listasQueSuman (n-k)]
-
--- 8.
 
 -- II).
 
@@ -420,6 +337,31 @@ mismaEstructura = foldAB (\ar -> esNil(ar)) (\ri r rd -> \a -> case a of
     Bin izq raiz der -> (ri izq) && (rd der)) 
 
 
+--19.
+
+data AIH a = Hoja a | Bin2 (AIH a) (AIH a)
+
+foldAIH::(a->b)->(b->b->b)->(AIH a)-> b 
+foldAIH fHoja _ (Hoja h) = fHoja h
+foldAIH fHoja fBin2 (Bin2 i d) = fBin2 (rec i) (rec d)
+    where rec = foldAIH fHoja fBin2
+
+alturaAIH::(AIH a)-> Int
+alturaAIH = foldAIH (\h -> 1) (\ri rd -> 1 + (max ri rd))
+
+tamañoAIH::(AIH a)-> Int
+tamañoAIH = foldAIH (\h-> 1) (\ri rd -> ri+rd) 
+
+arbolesTamañoN::Int->[AIH a]
+arbolesTamañoN 0 = []
+arbolesTamañoN 1 = [Hoja ()]
+arbolesTamañoN n = [Bin2 ar1 ar2 | a <- [1.. n], b <- [1 .. n], a+b ==n, (tamañoAIH ar1) == a , (tamañoAIH ar2) == b]
+
+
+todosLosAIH::[AIH ()]
+todosLosAIH = concatMap arbolesTamañoN [0..]
+
+
 -- 1. El árbol más básico (vacío)
 arbolVacio :: AB Int
 arbolVacio = Nil
@@ -434,6 +376,9 @@ arbolHoja = Bin Nil 10 Nil
 --     2   8
 arbolB :: AB Int
 arbolB = Bin (Bin Nil 2 Nil) 5 (Bin Nil 8 Nil)
+
+arbolB2 :: AIH Int
+arbolB2 = Bin2 (Hoja 2) (Hoja 8)
 
 arbolDB :: AB Int
 arbolDB = Bin (Bin (Bin Nil 3 Nil) 5 Nil) 10 (Bin Nil 15 Nil)
@@ -460,3 +405,5 @@ noAbb2 = Bin (Bin Nil 3 (Bin Nil 6 Nil)) 5 (Bin Nil 8 Nil)
 
 noAbb3 :: AB Int
 noAbb3 = Bin Nil 10 (Bin Nil 8 Nil)
+
+
