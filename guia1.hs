@@ -339,7 +339,8 @@ mismaEstructura = foldAB (\ar -> esNil(ar)) (\ri r rd -> \a -> case a of
 
 --19.
 
-data AIH a = Hoja a | Bin2 (AIH a) (AIH a)
+data AIH a = Hoja a | Bin2 (AIH a) (AIH a) 
+    deriving Show 
 
 foldAIH::(a->b)->(b->b->b)->(AIH a)-> b 
 foldAIH fHoja _ (Hoja h) = fHoja h
@@ -352,14 +353,15 @@ alturaAIH = foldAIH (\h -> 1) (\ri rd -> 1 + (max ri rd))
 tamañoAIH::(AIH a)-> Int
 tamañoAIH = foldAIH (\h-> 1) (\ri rd -> ri+rd) 
 
-arbolesTamañoN::Int->[AIH a]
+arbolesTamañoN::Int->[AIH ()]
 arbolesTamañoN 0 = []
 arbolesTamañoN 1 = [Hoja ()]
-arbolesTamañoN n = [Bin2 ar1 ar2 | a <- [1.. n], b <- [1 .. n], a+b ==n, (tamañoAIH ar1) == a , (tamañoAIH ar2) == b]
+arbolesTamañoN n = [Bin2 izq der | a <- [1.. n], b <- [1 .. n], a+b ==n, izq <- arbolesTamañoN a , der <- arbolesTamañoN b]
 
 
 todosLosAIH::[AIH ()]
 todosLosAIH = concatMap arbolesTamañoN [0..]
+
 
 
 -- 1. El árbol más básico (vacío)
